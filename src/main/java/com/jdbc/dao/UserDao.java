@@ -10,43 +10,27 @@ import java.util.EmptyStackException;
 
 public class UserDao {
     private DataSource dataSource;
+    private JdbcContext jdbcContext;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcContext = new JdbcContext(dataSource);
     }
 
-    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
-        Connection connection = null;
-        PreparedStatement pstmt = null;
-        try {
-            connection = dataSource.getConnection();
+    public void add(final User user) throws SQLException {
+        this.jdbcContext.jdbcContextWithStatementStrategy(new StatementStrategy() {
+            @Override
+            public PreparedStatement makePreparedStatement(Connection connection) throws SQLException {
 
-            pstmt = stmt.makePreparedStatement(connection);
+                    PreparedStatement pstmt = connection.prepareStatement("INSERT INTO `likelion-db`.users(id, name, password) VALUES (?, ?, ?)");
 
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
+                    pstmt.setString(1, user.getId());
+                    pstmt.setString(2, user.getName());
+                    pstmt.setString(3, user.getPassword());
+
+                    return pstmt;
             }
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-
-    public void add(User user) throws SQLException {
-        AddStratement addStratement = new AddStratement(user);
-        jdbcContextWithStatementStrategy(addStratement);
+        });
 //        Connection connection = null;
 //        PreparedStatement pstmt = null;
 //        try {
@@ -134,7 +118,12 @@ public class UserDao {
     }
 
     public void deleteAll() throws SQLException {
-        jdbcContextWithStatementStrategy(new DeleteAllStatement());
+        this.jdbcContext.jdbcContextWithStatementStrategy(new StatementStrategy() {
+            @Override
+            public PreparedStatement makePreparedStatement(Connection connection) throws SQLException {
+                return connection.prepareStatement("DELETE FROM `likelion-db`.users");
+            }
+        });
 //        Connection connection = null;
 //        PreparedStatement pstmt = null;
 //

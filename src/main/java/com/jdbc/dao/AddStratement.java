@@ -6,6 +6,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+/**
+ * 익명클래스 사용으로 더 이상 사용하지 않음
+ */
 public class AddStratement implements StatementStrategy{
     private User user;
 
