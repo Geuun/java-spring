@@ -3,6 +3,7 @@ package com.jdbc.dao;
 import com.jdbc.connectionMaker.AwsConnectionMaker;
 import com.jdbc.connectionMaker.ConnectionMaker;
 import com.jdbc.domain.User;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -15,15 +16,6 @@ public class UserDao {
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
         this.jdbcContext = new JdbcContext(dataSource);
-    }
-
-    public void executeSql(String sql) throws SQLException {
-        this.jdbcContext.jdbcContextWithStatementStrategy(new StatementStrategy() {
-            @Override
-            public PreparedStatement makePreparedStatement(Connection connection) throws SQLException {
-                return connection.prepareStatement(sql);
-            }
-        });
     }
 
     public void add(final User user) throws SQLException {
@@ -95,12 +87,8 @@ public class UserDao {
     }
 
     public void deleteAll() throws SQLException {
-        this.jdbcContext.jdbcContextWithStatementStrategy(new StatementStrategy() {
-            @Override
-            public PreparedStatement makePreparedStatement(Connection connection) throws SQLException {
-                return connection.prepareStatement("DELETE FROM `likelion-db`.users");
-            }
-        });
+        // Template Callback 적용으로 한줄로 정리
+        this.jdbcContext.executeSql("DELETE FROM `likelion-db`.users");
     }
 
     public int getCount() throws SQLException {
