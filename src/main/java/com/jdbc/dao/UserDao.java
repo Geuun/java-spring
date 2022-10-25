@@ -1,29 +1,34 @@
 package com.jdbc.dao;
 
+import com.jdbc.connectionMaker.AwsConnectionMaker;
+import com.jdbc.connectionMaker.ConnectionMaker;
 import com.jdbc.domain.User;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.EmptyStackException;
 
 public class UserDao {
-    private ConnectionMaker connectionMaker;
+    private DataSource dataSource;
 
-    public UserDao() {
-        this.connectionMaker = new AwsConnectionMaker();
+    public UserDao(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public UserDao(ConnectionMaker connectionMaker) {
-        this.connectionMaker = connectionMaker;
-    }
-
-    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
+    public void add(User user) throws SQLException {
         Connection connection = null;
         PreparedStatement pstmt = null;
         try {
-            connection = connectionMaker.makeConnection();
+            // DB접속 (mysql)
+            connection = dataSource.getConnection();
 
-            pstmt = stmt.makePreparedStatement(connection);
+            // Query문 작성
+            pstmt = connection.prepareStatement("INSERT INTO `likelion-db`.users(id, name, password) VALUES(?,?,?);");
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, user.getName());
+            pstmt.setString(3, user.getPassword());
 
+            // Query문 실행
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -32,22 +37,17 @@ public class UserDao {
                 try {
                     pstmt.close();
                 } catch (SQLException e) {
-                    throw new RuntimeException(e);
+
                 }
             }
             if (connection != null) {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    throw new RuntimeException(e);
+
                 }
             }
         }
-    }
-
-    public void add(User user) throws SQLException {
-        StatementStrategy st = new AddStratement(user);
-        jdbcContextWithStatementStrategy(st);
     }
 
     public User findById(String id) throws SQLException {
@@ -57,7 +57,7 @@ public class UserDao {
         User user = null;
         try {
             // DB접속 (mysql)
-            connection = connectionMaker.makeConnection();
+            connection = dataSource.getConnection();
 
             // Query문 작성
             pstmt = connection.prepareStatement("SELECT * FROM `likelion-db`.users WHERE id = ?");
@@ -103,8 +103,37 @@ public class UserDao {
     }
 
     public void deleteAll() throws SQLException {
-        StatementStrategy st = new DeleteAllStatement();
-        jdbcContextWithStatementStrategy(st);
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            // DB접속 (mysql)
+            connection = dataSource.getConnection();
+
+            // Query문 작성
+            pstmt = connection.prepareStatement("DELETE FROM `likelion-db`.users");
+
+            // Query문 실행
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     public int getCount() throws SQLException {
@@ -114,7 +143,7 @@ public class UserDao {
 
         try {
             //DB 접속
-            connection = connectionMaker.makeConnection();
+            connection = dataSource.getConnection();
 
             // Query문 작성
             pstmt = connection.prepareStatement("SELECT COUNT(*) FROM `likelion-db`.users");
@@ -150,10 +179,5 @@ public class UserDao {
         }
     }
 
-    public static void main(String[] args) throws SQLException {
-        UserDao userDao = new UserDao();
-        userDao.add(new User("1", "geun", "1234"));
-        User user = userDao.findById("1");
-        System.out.println(user.getName());
-    }
+
 }
