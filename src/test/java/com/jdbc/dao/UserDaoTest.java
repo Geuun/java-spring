@@ -12,6 +12,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,6 +25,7 @@ class UserDaoTest {
     ApplicationContext context;
 
     UserDao userDao;
+    User user;
     User user1;
     User user2;
     User user3;
@@ -43,15 +45,18 @@ class UserDaoTest {
 
     @Test
     @DisplayName("Add 와 Get Test")
-    void addAndGet() throws SQLException {
-        //insert
-        userDao.add(user1);
+    void addAndget() throws SQLException {
 
-        //select
-        User user = userDao.findById(user1.getId());
-        //select 결과 값과 user1 와 비교하기
-        assertEquals(user1.getName(), user.getName());
-        assertEquals(user1.getPassword(), user.getPassword());
+        assertEquals(0, userDao.getCount());
+
+        // add
+        userDao.add(user1);
+        userDao.add(user2);
+
+        // get
+        user = userDao.get("1");
+        user = userDao.get("2");
+        assertEquals(2, userDao.getCount());
     }
 
     @Test
@@ -66,5 +71,18 @@ class UserDaoTest {
         assertEquals(2, userDao.getCount());
         userDao.add(user3);
         assertEquals(3, userDao.getCount());
+    }
+
+    @Test
+    @DisplayName("getAll Test : 없을 때 빈 리스트 리턴하는지 / 있을 때 개수만큼 리턴하는지")
+    void getAllTest() throws SQLException {
+        userDao.deleteAll();
+        List<User> users = userDao.getAll();
+        assertEquals(0,users.size());
+        userDao.add(user1);
+        userDao.add(user2);
+        userDao.add(user3);
+        users = userDao.getAll();
+        assertEquals(3,users.size());
     }
 }
