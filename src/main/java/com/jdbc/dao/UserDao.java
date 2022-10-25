@@ -10,44 +10,59 @@ import java.util.EmptyStackException;
 
 public class UserDao {
     private DataSource dataSource;
+    private JdbcContext jdbcContext;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcContext = new JdbcContext(dataSource);
     }
 
-    public void add(User user) throws SQLException {
-        Connection connection = null;
-        PreparedStatement pstmt = null;
-        try {
-            // DB접속 (mysql)
-            connection = dataSource.getConnection();
+    public void add(final User user) throws SQLException {
+        this.jdbcContext.jdbcContextWithStatementStrategy(new StatementStrategy() {
+            @Override
+            public PreparedStatement makePreparedStatement(Connection connection) throws SQLException {
 
-            // Query문 작성
-            pstmt = connection.prepareStatement("INSERT INTO `likelion-db`.users(id, name, password) VALUES(?,?,?);");
-            pstmt.setString(1, user.getId());
-            pstmt.setString(2, user.getName());
-            pstmt.setString(3, user.getPassword());
+                    PreparedStatement pstmt = connection.prepareStatement("INSERT INTO `likelion-db`.users(id, name, password) VALUES (?, ?, ?)");
 
-            // Query문 실행
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
+                    pstmt.setString(1, user.getId());
+                    pstmt.setString(2, user.getName());
+                    pstmt.setString(3, user.getPassword());
 
-                }
+                    return pstmt;
             }
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-
-                }
-            }
-        }
+        });
+//        Connection connection = null;
+//        PreparedStatement pstmt = null;
+//        try {
+//            // DB접속 (mysql)
+//            connection = dataSource.getConnection();
+//
+//            // Query문 작성
+//            pstmt = connection.prepareStatement("INSERT INTO `likelion-db`.users(id, name, password) VALUES(?,?,?);");
+//            pstmt.setString(1, user.getId());
+//            pstmt.setString(2, user.getName());
+//            pstmt.setString(3, user.getPassword());
+//
+//            // Query문 실행
+//            pstmt.executeUpdate();
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        } finally {
+//            if (pstmt != null) {
+//                try {
+//                    pstmt.close();
+//                } catch (SQLException e) {
+//
+//                }
+//            }
+//            if (connection != null) {
+//                try {
+//                    connection.close();
+//                } catch (SQLException e) {
+//
+//                }
+//            }
+//        }
     }
 
     public User findById(String id) throws SQLException {
@@ -103,37 +118,43 @@ public class UserDao {
     }
 
     public void deleteAll() throws SQLException {
-        Connection connection = null;
-        PreparedStatement pstmt = null;
-
-        try {
-            // DB접속 (mysql)
-            connection = dataSource.getConnection();
-
-            // Query문 작성
-            pstmt = connection.prepareStatement("DELETE FROM `likelion-db`.users");
-
-            // Query문 실행
-            pstmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
+        this.jdbcContext.jdbcContextWithStatementStrategy(new StatementStrategy() {
+            @Override
+            public PreparedStatement makePreparedStatement(Connection connection) throws SQLException {
+                return connection.prepareStatement("DELETE FROM `likelion-db`.users");
             }
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
+        });
+//        Connection connection = null;
+//        PreparedStatement pstmt = null;
+//
+//        try {
+//            // DB접속 (mysql)
+//            connection = dataSource.getConnection();
+//
+//            // Query문 작성
+//            pstmt = connection.prepareStatement("DELETE FROM `likelion-db`.users");
+//
+//            // Query문 실행
+//            pstmt.executeUpdate();
+//
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        } finally {
+//            if (pstmt != null) {
+//                try {
+//                    pstmt.close();
+//                } catch (SQLException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//            if (connection != null) {
+//                try {
+//                    connection.close();
+//                } catch (SQLException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        }
     }
 
     public int getCount() throws SQLException {
