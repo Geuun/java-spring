@@ -4,86 +4,44 @@ import com.jdbc.connectionMaker.AwsConnectionMaker;
 import com.jdbc.connectionMaker.ConnectionMaker;
 import com.jdbc.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.EmptyStackException;
+import java.util.List;
 
 public class UserDao {
     private DataSource dataSource;
     private JdbcContext jdbcContext;
+    private JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
         this.jdbcContext = new JdbcContext(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public void add(final User user) throws SQLException {
-        this.jdbcContext.jdbcContextWithStatementStrategy(new StatementStrategy() {
-            @Override
-            public PreparedStatement makePreparedStatement(Connection connection) throws SQLException {
-
-                    PreparedStatement pstmt = connection.prepareStatement("INSERT INTO `likelion-db`.users(id, name, password) VALUES (?, ?, ?)");
-
-                    pstmt.setString(1, user.getId());
-                    pstmt.setString(2, user.getName());
-                    pstmt.setString(3, user.getPassword());
-
-                    return pstmt;
-            }
-        });
-    }
-
-    public User findById(String id) throws SQLException {
-        Connection connection = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        User user = null;
-        try {
-            // DB접속 (mysql)
-            connection = dataSource.getConnection();
-
-            // Query문 작성
-            pstmt = connection.prepareStatement("SELECT * FROM `likelion-db`.users WHERE id = ?");
-            pstmt.setString(1, id);
-
-            // Query문 실행
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                user = new User(rs.getString("id"), rs.getString("name"),
-                        rs.getString("password"));
-            }
-            if (user == null) {
-                throw new EmptyStackException();
-            }
-
+    private RowMapper<User> rowMapper = new RowMapper<User>() {
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            User user = new User(rs.getString("id"),
+                    rs.getString("name"),
+                    rs.getString("password"));
             return user;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
         }
+    };
+
+    public void add(final User user) {
+        this.jdbcTemplate.update("INSERT INTO users(id,name,password) values(?,?,?);",
+                user.getId(),
+                user.getName(),
+                user.getPassword());
+    }
+
+    public User get(String id) {
+        String sql = "SELECT * FROM `likelion-db`.users WHERE id =?";
+        return this.jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public void deleteAll() throws SQLException {
@@ -91,48 +49,12 @@ public class UserDao {
         this.jdbcContext.executeSql("DELETE FROM `likelion-db`.users");
     }
 
-    public int getCount() throws SQLException {
-        Connection connection = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            //DB 접속
-            connection = dataSource.getConnection();
-
-            // Query문 작성
-            pstmt = connection.prepareStatement("SELECT COUNT(*) FROM `likelion-db`.users");
-
-            // Query문 실행
-            rs = pstmt.executeQuery();
-            rs.next();
-            return rs.getInt(1);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
+    public int getCount() {
+        return this.jdbcTemplate.queryForObject("SELECT COUNT(*) from users;", Integer.class);
     }
 
-
+    public List<User> getAll() {
+        String sql = "SELECT * FROM users order by id";
+        return this.jdbcTemplate.query(sql, rowMapper);
+    }
 }
