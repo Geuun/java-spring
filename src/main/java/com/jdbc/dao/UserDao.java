@@ -43,7 +43,7 @@ public class UserDao {
             }
             if (connection != null) {
                 try {
-                    c.close();
+                    connection.close();
                 } catch (SQLException e) {
 
                 }
