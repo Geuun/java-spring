@@ -6,15 +6,17 @@ import java.sql.*;
 import java.util.Map;
 
 public class UserDao {
-    public void add(User user) {
+    private ConnectionMaker connectionMaker;
+
+    public void add(User user) throws SQLException {
         Map<String, String> env = System.getenv();
         try {
-            // DB접속 (ex sql workbeanch실행)
+            // DB접속 (mysql)
             Connection c = DriverManager.getConnection(env.get("DB_HOST"),
                     env.get("DB_USER"), env.get("DB_PASSWORD"));
 
             // Query문 작성
-            PreparedStatement pstmt = c.prepareStatement("INSERT INTO users(id, name, password) VALUES(?,?,?);");
+            PreparedStatement pstmt = c.prepareStatement("INSERT INTO `likelion-db`.users(id, name, password) VALUES(?,?,?);");
             pstmt.setString(1, user.getId());
             pstmt.setString(2, user.getName());
             pstmt.setString(3, user.getPassword());
@@ -30,16 +32,16 @@ public class UserDao {
         }
     }
 
-    public User findById(String id) {
+    public User findById(String id) throws SQLException {
         Map<String, String> env = System.getenv();
         Connection c;
         try {
-            // DB접속 (ex sql workbeanch실행)
+            // DB접속 (mysql)
             c = DriverManager.getConnection(env.get("DB_HOST"),
                     env.get("DB_USER"), env.get("DB_PASSWORD"));
 
             // Query문 작성
-            PreparedStatement pstmt = c.prepareStatement("SELECT * FROM users WHERE id = ?");
+            PreparedStatement pstmt = c.prepareStatement("SELECT * FROM `likelion-db`.users WHERE id = ?");
             pstmt.setString(1, id);
 
             // Query문 실행
@@ -59,10 +61,10 @@ public class UserDao {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
         UserDao userDao = new UserDao();
-//        userDao.add();
-        User user = userDao.findById("6");
+        userDao.add(new User("1", "geun", "1234"));
+        User user = userDao.findById("1");
         System.out.println(user.getName());
     }
 }
