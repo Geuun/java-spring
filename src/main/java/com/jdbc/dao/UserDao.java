@@ -16,6 +16,34 @@ public class UserDao {
         this.connectionMaker = connectionMaker;
     }
 
+    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+        try {
+            connection = connectionMaker.makeConnection();
+
+            pstmt = stmt.makePreparedStatement(connection);
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
     public void add(User user) throws SQLException {
         Connection connection = null;
         PreparedStatement pstmt = null;
@@ -111,8 +139,8 @@ public class UserDao {
             // DB접속 (mysql)
             connection = connectionMaker.makeConnection();
 
-            // Query문 작성
-            pstmt = connection.prepareStatement("DELETE FROM `likelion-db`.users");
+            StatementStrategy strategy = new DeleteAllStatement();
+            pstmt = strategy.makePreparedStatement(connection);
 
             // Query문 실행
             pstmt.executeUpdate();
