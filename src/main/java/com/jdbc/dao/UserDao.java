@@ -8,12 +8,19 @@ import java.util.Map;
 public class UserDao {
     private ConnectionMaker connectionMaker;
 
+    public UserDao() {
+        this.connectionMaker = new AwsConnectionMaker();
+    }
+
+    public UserDao(ConnectionMaker connectionMaker) {
+        this.connectionMaker = connectionMaker;
+    }
+
     public void add(User user) throws SQLException {
         Map<String, String> env = System.getenv();
         try {
             // DB접속 (mysql)
-            Connection c = DriverManager.getConnection(env.get("DB_HOST"),
-                    env.get("DB_USER"), env.get("DB_PASSWORD"));
+            Connection c = connectionMaker.makeConnection();
 
             // Query문 작성
             PreparedStatement pstmt = c.prepareStatement("INSERT INTO `likelion-db`.users(id, name, password) VALUES(?,?,?);");
@@ -33,12 +40,9 @@ public class UserDao {
     }
 
     public User findById(String id) throws SQLException {
-        Map<String, String> env = System.getenv();
-        Connection c;
         try {
             // DB접속 (mysql)
-            c = DriverManager.getConnection(env.get("DB_HOST"),
-                    env.get("DB_USER"), env.get("DB_PASSWORD"));
+            Connection c = connectionMaker.makeConnection();
 
             // Query문 작성
             PreparedStatement pstmt = c.prepareStatement("SELECT * FROM `likelion-db`.users WHERE id = ?");
