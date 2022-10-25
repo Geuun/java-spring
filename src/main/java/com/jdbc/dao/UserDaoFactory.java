@@ -19,12 +19,12 @@ public class UserDaoFactory {
 //        return userDao;
 //    }
 
-    @Bean
-    public UserDao localUserDao() {
-        UserDao userDao = new UserDao(new LocalConnectionMaker());
-
-        return userDao;
-    }
+//    @Bean
+//    public UserDao localUserDao() {
+//        UserDao userDao = new UserDao(new LocalConnectionMaker());
+//
+//        return userDao;
+//    }
 
     @Bean
     public UserDao awsUserDao() {
@@ -42,6 +42,6 @@ public class UserDaoFactory {
         dataSource.setUsername(env.get("DB_USER"));
         dataSource.setPassword(env.get("DB_PASSWORD"));
 
-        return dataSource
+        return dataSource;
     }
 }
