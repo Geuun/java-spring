@@ -28,7 +28,7 @@ class UserDaoTest {
     @Test
     @DisplayName("Add 와 Get Test")
     void addAndGet() throws SQLException {
-        UserDao userDao = new UserDao();
+        UserDao userDao = new UserDaoFactory().awsUserDao();
 
         //insert
         userDao.add(user1);
